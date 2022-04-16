@@ -1,0 +1,45 @@
+.body {
+  width: 800px;
+  color: grey;
+  margin: 0 auto;
+  padding: 20px;
+  box-shadow: 0px 0px 10px 2px lightgrey;
+  height: auto;
+  font-family: sans-serif;
+  font-size: 14px;
+}
+
+hr {
+  border: 0;
+  margin: 16px;
+  border-top: 1px solid lightgrey;
+}
+
+#information {
+  text-align: center;
+}
+
+#inversion-order {
+  text-align: center;
+}
+
+body {
+  margin: 0;
+}
+
+.footer {
+  color: grey;
+  text-align: center;
+}
+
+#graphs {
+  display: none;
+}
+
+.options {
+  display: flex;
+}
+
+.options-child {
+  flex: 1 1 auto;
+}

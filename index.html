@@ -1,0 +1,78 @@
+<html>
+
+  <head>
+
+
+    <meta name="author" content="Mathijs Koymans">
+
+    <link rel="stylesheet" href="./index.css">
+
+    <title>Gravity Solver</title>
+
+  </head>
+
+  <body>
+
+    <div style="text-align: center;">
+      <a href="https://knmi.nl"><img src="./knmi.png"></a>
+    </div>
+
+    <br>
+
+    <div class="body">
+
+      <div class="options">
+
+        <div class="options-child">
+          <input id="load-file" type="file">
+        </div>
+
+        <div class="options-child">
+          Drift Order: 
+          <select id="inversion-order">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+          </select>
+        </div>
+
+        <div class="options-child">
+          <input type="checkbox" id="remove-drift"><label for="remove-drift">Subtract Drift</label>
+        </div>
+
+      </div>
+
+
+      <div id="information">
+
+        <br>
+        <hr>
+        Select browse to load a data file.
+
+      </div>
+
+      <div id="graphs">
+
+        <br>
+        <hr>
+
+        <div id="container-raw"></div>
+        <div id="container-solved"></div>
+
+        <hr>
+
+        <div class="footer">
+          <small>Copyright Mathijs Koymans, 2022</small>
+        </div>
+
+      </div>
+
+    </div>
+
+  </body>
+
+  <script src="https://code.highcharts.com/highcharts.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.4.3/math.js"></script>
+  <script src="index.js"></script>
+
+</html>
