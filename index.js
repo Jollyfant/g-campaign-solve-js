@@ -93,7 +93,7 @@ GSolve.prototype.calculate = function() {
   let anchor = this.data[0].benchmark;
   let times = data.map(x => x.time);
   let timecorr = times[0];
-  times = times.map(x => (x - timecorr) / 1	000);
+  times = times.map(x => (x - timecorr) / 1000);
 
   // Matrix for drift parameters
   let dMatrix = this.getDriftMatrix(times, degree);
