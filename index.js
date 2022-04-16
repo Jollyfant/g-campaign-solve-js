@@ -10,6 +10,9 @@ const GSolve = function() {
   document.getElementById("load-file").addEventListener("change", this.readFile.bind(this));
   document.getElementById("inversion-order").addEventListener("change", this.calculate.bind(this));
   document.getElementById("remove-drift").addEventListener("change", this.calculate.bind(this));
+  document.getElementById("tare").addEventListener("change", this.calculate.bind(this));
+  document.getElementById("tare-enabled").addEventListener("change", this.calculate.bind(this));
+  document.getElementById("uncertainty-bars").addEventListener("change", this.calculate.bind(this));
 
 }
 
@@ -108,6 +111,16 @@ GSolve.prototype.calculate = function() {
     dMatrix.push(this.getGravityDesignMatrixColumn(benchmark, benchmarks));
   }, this);
 
+  // Handle tares
+  let tare = Number(document.getElementById("tare").value);
+  tare = Math.min(Math.max(0, tare), times.length);
+  let tareArray;
+
+  if(document.getElementById("tare-enabled").checked && tare > 0 && tare < times.length) {
+    tareArray = times.map((x, i) => i < tare ? 0 : 1);
+    dMatrix.push(tareArray);
+  }
+
   // Transpose
   gMatrix = math.transpose(dMatrix);
 
@@ -144,8 +157,16 @@ GSolve.prototype.calculate = function() {
   let sep = unique.sort();
   sep.unshift(anchor);
 
+  let tareOffset;
+
+  if(document.getElementById("tare-enabled").checked && tare > 0 && tare < times.length) {
+    tareOffset = tareArray.map(x => x * lsq[lsq.length - 1]);
+  } else {
+    tareOffset = new Array(times.length).fill(0);
+  }
+
   this.plotRaw(data, sep);
-  this.plotSolution(data, times, values, sep, lookup, polynomial, timecorr);
+  this.plotSolution(data, times, sep, lookup, polynomial, timecorr, tareOffset, tare);
 
   // Show
   document.getElementById("graphs").style.display = "block";
@@ -293,7 +314,7 @@ GSolve.prototype.interp = function(polynomial, x) {
 
 }
 
-GSolve.prototype.plotSolution = function(data, times, values, as, lookup, polynomial, timecorr) {
+GSolve.prototype.plotSolution = function(data, times, as, lookup, polynomial, timecorr, tareOffset, tare) {
 
   /*
    * Function GSolve.plotSolution
@@ -306,43 +327,123 @@ GSolve.prototype.plotSolution = function(data, times, values, as, lookup, polyno
   let driftPerSecond = polynomial[polynomial.length - 2];
 
   let correct = true;
+  let series = new Array();
+  let tares = new Array();
 
-  let series = Array.from(as).map(function(benchmark) {
+  Array.from(as).forEach(function(benchmark) {
 
-    let dg = Math.round(lookup[benchmark].dg);
+    let dg = lookup[benchmark].dg;
     let uncertainty = Math.round(2 * lookup[benchmark].stds);
 
-    let series = data.filter(x => x.benchmark === benchmark).map(function(x) {
+    let points = new Array();
+    let errors = new Array();
 
-      let value = 1000 * x.value - dg;
+    data.forEach(function(x, i) {
+
+      if(x.benchmark !== benchmark) {
+        return;
+      }
+
+      let value = 1000 * x.value - dg - tareOffset[i];
 
       if(shouldSubtractDrift) {
         value -= this.interp(polynomial, (x.time - timecorr) / 1000);
       }
 
-      return new Object({
+      value = Math.round(value);
+
+      if(tareOffset[i] !== 0) {
+        tares.push(new Object({
+          "x": x.time,
+          "y": value + tareOffset[i]
+        }));
+      }
+
+      points.push(new Object({
         "x": x.time,
         "y": value
-      });
+      }));
+
+      errors.push(new Object({
+        "x": x.time,
+        "y": value - uncertainty,
+      }));
+
+      errors.push(new Object({
+        "x": x.time,
+        "y": value + uncertainty
+      }));
+
+      errors.push([x.time, null]);
 
     }, this);
 
-    return new Object({
-      "name": benchmark + " (" + dg + "±" + uncertainty + ")",
+    series.push(new Object({
+      "type": "scatter",
+      "name": benchmark + " (" + Math.round(dg) + "±" + uncertainty + ")",
       "marker": {
         "symbol": "circle",
         "lineWidth": 1,
         "lineColor": "black"
       },
       "zIndex": 2,
-      "data": series
-    });
+      "data": points
+    }));
+
+    if(document.getElementById("uncertainty-bars").checked) {
+      series.push(new Object({
+        "linkedTo": ":previous",
+        "type": "line",
+        "zIndex": 1,
+        "lineWidth": 2,
+        "color": "grey",
+        "data": errors
+      }));
+    }
 
   }, this);
 
   // Plot horizontal line at 0
   if(shouldSubtractDrift) {
     polyLineData = new Array({"x": data[0].time, "y": 0}, {"x": data[data.length - 1].time, "y": 0});
+  }
+
+  let plotBands = new Array();
+
+  // Add a plot band for the tare	
+  if(document.getElementById("tare-enabled").checked && tare > 0 && tare < times.length) {
+
+    plotBands.push({
+      "color": "rgba(255, 0, 0, 0.1)",
+      "from": timecorr + times[tare] * 1000,
+      "to": timecorr + times[times.length - 1] * 1000
+    });
+
+    series.push({
+      "name": "Tare (" + Math.round(tareOffset[tare]) + "μGal)",
+      "type": "scatter",
+      "color": "white",
+      "marker": {
+        "symbol": "circle",
+        "lineColor": "red",
+        "lineWidth": 1
+      },
+      "data": tares,
+      "events": {
+        "legendItemClick": function() {
+          if(this.visible) {
+            this.chart.xAxis[0].update({
+              plotBands: []
+            });
+          } else {
+            this.chart.xAxis[0].update({
+              plotBands: plotBands
+            });
+          }
+        }
+      }
+    });
+
   }
 
   series.push({
@@ -372,11 +473,12 @@ GSolve.prototype.plotSolution = function(data, times, values, as, lookup, polyno
         }
       },
       "xAxis": {
-        "type": "datetime"
+        "type": "datetime",
+        "plotBands": plotBands,
       },
       "tooltip": {
           formatter: function () {
-              if(rem) {
+              if(shouldSubtractDrift) {
                 return "Benchmark <b>" + this.series.name + "</b><br> Gravity Residual: " + Math.round(this.y) + "μGal";
               } else {
                 return "Benchmark <b>" + this.series.name + "</b><br> Gravity Value: " + Math.round(this.y) + "μGal";

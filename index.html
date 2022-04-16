@@ -25,10 +25,8 @@
 
         <div class="options-child">
           <input id="load-file" type="file">
-        </div>
-
-        <div class="options-child">
-          Example Files <a href="./example-578.txt">one</a>, <a href="./example-579.txt">two</a>.
+          <br>
+          Example Files <a href="./example-one.txt">one</a>, <a href="./example-two.txt">two</a>, <a href="./example-three.txt">three</a>.
         </div>
 
         <div class="options-child">
@@ -42,6 +40,15 @@
 
         <div class="options-child">
           <input type="checkbox" id="remove-drift"><label for="remove-drift">Subtract Drift</label>
+        </div>
+
+        <div class="options-child">
+          <input type="checkbox" id="uncertainty-bars"><label for="uncertainty-bars">Confidence Intervals</label>
+        </div>
+
+        <div class="options-child">
+          Tare Offset <input type="text" id="tare" size="4">
+          <input type="checkbox" id="tare-enabled"><label for="remove-drift"></label>
         </div>
 
       </div>
@@ -76,6 +83,7 @@
   </body>
 
   <script src="https://code.highcharts.com/highcharts.js"></script>
+  <script src="https://code.highcharts.com/highcharts-more.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.4.3/math.js"></script>
   <script src="index.js"></script>
 
