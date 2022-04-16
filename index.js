@@ -93,7 +93,7 @@ GSolve.prototype.calculate = function() {
   let anchor = this.data[0].benchmark;
   let times = data.map(x => x.time);
   let timecorr = times[0];
-  times = times.map(x => (x - timecorr) / 1000);
+  times = times.map(x => (x - timecorr) / 1	000);
 
   // Matrix for drift parameters
   let dMatrix = this.getDriftMatrix(times, degree);
@@ -192,6 +192,8 @@ GSolve.prototype.invert = function(dmatrix, wmatrix, values) {
   let residuals = math.subtract(values, math.multiply(dmatrix, lsq));
   let chi = math.multiply(math.transpose(residuals), wmatrix, residuals);
   let res = math.multiply(chi / dof, N);
+
+  // These are standard deviations
   let std = math.sqrt(math.diag(res));
 
   return { lsq, std }
