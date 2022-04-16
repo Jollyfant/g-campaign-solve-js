@@ -54,7 +54,7 @@ GSolve.prototype.parseRow = function(row) {
   let [ time, benchmark, value, error ] = row.split(",");
   
   return new Object({
-    "time": Date.parse(time),
+    "time": Date.parse(time + "Z"),
     "benchmark": benchmark,
     "value": Number(value),
     "error": Number(error)
