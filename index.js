@@ -13,6 +13,7 @@ const GSolve = function() {
   document.getElementById("tare").addEventListener("change", this.calculate.bind(this));
   document.getElementById("tare-enabled").addEventListener("change", this.calculate.bind(this));
   document.getElementById("uncertainty-bars").addEventListener("change", this.calculate.bind(this));
+  document.getElementById("demo").addEventListener("click", this.demo.bind(this));
 
   document.addEventListener('DOMContentLoaded', this.init.bind(this));
 
@@ -21,7 +22,25 @@ const GSolve = function() {
 GSolve.prototype.VERSION = "0.0.1";
 GSolve.prototype.DOI = "DOI Not Available";
 
+GSolve.prototype.demo = function() {
+
+  /*
+   * Function GSolve.demo
+   * Loads a demo file to display
+   */
+
+  fetch("./example-one.txt").then(response => response.text()).then(function(result) {
+    this.parseFile({ result });
+  }.bind(this));
+
+}
+
 GSolve.prototype.init = function(event) {
+
+  /*
+   * Function GSolve.init
+   * Initializes the app with a version / DOI
+   */
 
   document.getElementById("footer-info").innerHTML = "Version " + this.VERSION + " (" + this.DOI + ")";
 
