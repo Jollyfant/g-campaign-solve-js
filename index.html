@@ -47,8 +47,7 @@
         </div>
 
         <div class="options-child">
-          Tare Offset <input type="text" id="tare" size="4">
-          <input type="checkbox" id="tare-enabled"><label for="remove-drift"></label>
+          <input type="checkbox" id="tare-enabled"><label for="tare-enabled">Tare Offset</label> <input type="text" id="tare" size="4">
         </div>
 
       </div>
@@ -67,13 +66,16 @@
         <br>
         <hr>
 
+        <p> <b> Figure 1) </b> - Raw microgravity data from the campaign occupations are shown below.
         <div id="container-raw"></div>
+        <p> <b> Figure 2) </b> - A weighted least squares inversion is applied to the data. A tidal correction is not applied. The effective gravity benchmarks between the anchor <b><span id="anchor"></span></b> and bencharks has been removed. Solutions can be exported by clicking the exporting button in the top-right corner of the graph. The order of the drift can be changed and subtracted from the data to center around zero. An optional data tare beyond a particular sample can be enabled in the top menu.
         <div id="container-solved"></div>
 
         <hr>
 
         <div class="footer">
-          <small>Copyright Mathijs Koymans, 2022</small>
+          <small>Copyright Mathijs Koymans, 2022 - <a href="https://github.com/Jollyfant/g-campaign-solve-js">GitHub</a> - <span id="footer-info"></span></small>
+
         </div>
 
       </div>
@@ -84,6 +86,10 @@
 
   <script src="https://code.highcharts.com/highcharts.js"></script>
   <script src="https://code.highcharts.com/highcharts-more.js"></script>
+  <script src="https://code.highcharts.com/modules/exporting.js"></script>
+  <!-- optional -->
+  <script src="https://code.highcharts.com/modules/offline-exporting.js"></script>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.4.3/math.js"></script>
   <script src="index.js"></script>
 

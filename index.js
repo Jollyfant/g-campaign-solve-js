@@ -14,8 +14,18 @@ const GSolve = function() {
   document.getElementById("tare-enabled").addEventListener("change", this.calculate.bind(this));
   document.getElementById("uncertainty-bars").addEventListener("change", this.calculate.bind(this));
 
+  document.addEventListener('DOMContentLoaded', this.init.bind(this));
+
 }
 
+GSolve.prototype.VERSION = "0.0.1";
+GSolve.prototype.DOI = "DOI Not Available";
+
+GSolve.prototype.init = function(event) {
+
+  document.getElementById("footer-info").innerHTML = "Version " + this.VERSION + " (" + this.DOI + ")";
+
+}
 
 GSolve.prototype.readFile = function(event) {
 
@@ -25,9 +35,12 @@ GSolve.prototype.readFile = function(event) {
    */
 
   let reader = new FileReader();
+  let file = event.target.files[0];
+
+  this.filename = file.name;
 
   reader.onload = this.parseFile.bind(this, reader);
-  reader.readAsText(event.target.files[0]);
+  reader.readAsText(file);
 
 }
 
@@ -38,7 +51,7 @@ GSolve.prototype.parseFile = function(reader) {
    * Parses the data file
    */
 
-  this.data = reader.result.split(/\r?\n/).map(this.parseRow, this);
+  this.data = reader.result.split(/\r?\n/).filter(x => !x.startsWith("#")).map(this.parseRow, this);
 
   this.calculate();
 
@@ -94,6 +107,8 @@ GSolve.prototype.calculate = function() {
 
   // Anchor is the first entry
   let anchor = this.data[0].benchmark;
+
+  document.getElementById("anchor").innerHTML = anchor;
   let times = data.map(x => x.time);
   let timecorr = times[0];
   times = times.map(x => (x - timecorr) / 1000);
@@ -284,6 +299,13 @@ GSolve.prototype.plotRaw = function(data, as) {
         return "Benchmark <b>" + this.series.name + "</b><br> Gravity Value: " + this.y + "μGal";
       }
     },
+    "exporting": {
+      "buttons": {
+        "contextButton": {
+          "menuItems": ["downloadPNG", "downloadJPEG", "downloadPDF", "downloadSVG"],
+        }
+      }
+    },
 	"plotOptions": {
 	  "series": {
 	    "animation": false
@@ -311,6 +333,32 @@ GSolve.prototype.interp = function(polynomial, x) {
   }
 
   return sum;
+
+}
+
+GSolve.prototype.handleExport = function() {
+
+  /*
+   * Function GSolve.handleExport
+   * Handles the .CSV exporting of a gravity data file
+   */
+
+   let csv = this.series.slice(0, this.series.length - 1).map(function(x) {
+     return new Array(x.options.benchmark, Math.round(x.options.dg), Math.round(x.options.std)).join(",");
+   })
+  
+   csv.unshift(["Benchmark", "Gravity Difference (\u03BCGal)", "2\u03C3 Confidence Interval (\u03BCGal)"].join(","));
+   csv.unshift(["Input", G.filename].join(","))
+   csv.unshift(["Version", GSolve.prototype.VERSION].join(","))
+   csv.unshift(["Exported", new Date().toISOString().substring(0, 19)].join(","))
+
+   let blob = new Blob([csv.join("\n")]);
+   let a = window.document.createElement("a");
+   a.href = window.URL.createObjectURL(blob, {type: "text/csv;charset=utf-8"});
+   a.download = "gravity-results.csv";
+   document.body.appendChild(a);
+   a.click();
+   document.body.removeChild(a);
 
 }
 
@@ -380,7 +428,10 @@ GSolve.prototype.plotSolution = function(data, times, as, lookup, polynomial, ti
 
     series.push(new Object({
       "type": "scatter",
-      "name": benchmark + " (" + Math.round(dg) + "±" + uncertainty + ")",
+      "dg": dg,
+      "benchmark": benchmark,
+      "std": uncertainty,
+      "name": benchmark === as[0] ? benchmark : benchmark + " (" + Math.round(dg) + "±" + uncertainty + ")",
       "marker": {
         "symbol": "circle",
         "lineWidth": 1,
@@ -460,40 +511,53 @@ GSolve.prototype.plotSolution = function(data, times, as, lookup, polynomial, ti
   });
 
   Highcharts.chart("container-solved", {
-      chart: {
-          "animation": false,
-          "type": "scatter",
-      },
+    chart: {
+        "animation": false,
+        "type": "scatter",
+    },
+    "title": {
+      "text": "Inversion Results"
+    },
+    "yAxis": {
       "title": {
-        "text": "Inversion Results"
-      },
-      "yAxis": {
-        "title": {
-          "text": "Microgravity (μGal)"
+        "text": "Microgravity (μGal)"
+      }
+    },
+    "xAxis": {
+      "type": "datetime",
+      "plotBands": plotBands,
+    },
+    "exporting": {
+        "menuItemDefinitions": {
+            "downloadCSV": {
+                "onclick": this.handleExport,
+                "text": "Download CSV data file"
+            }
+        },
+      "buttons": {
+        "contextButton": {
+          "menuItems": ["downloadPNG", "downloadJPEG", "downloadPDF", "downloadSVG", "downloadCSV"],
         }
-      },
-      "xAxis": {
-        "type": "datetime",
-        "plotBands": plotBands,
-      },
-      "tooltip": {
-          formatter: function () {
-              if(shouldSubtractDrift) {
-                return "Benchmark <b>" + this.series.name + "</b><br> Gravity Residual: " + Math.round(this.y) + "μGal";
-              } else {
-                return "Benchmark <b>" + this.series.name + "</b><br> Gravity Value: " + Math.round(this.y) + "μGal";
-              }
-          }
-      },
-	  "plotOptions": {
-	  	"series": {
-	  	  "animation": false
-	  	}
-	  },
-      "credits": {
-        "enabled": false
-      },
-      "series": series
+      }
+    },
+    "tooltip": {
+      formatter: function () {
+        if(shouldSubtractDrift) {
+          return "Benchmark <b>" + this.series.name + "</b><br> Gravity Residual: " + Math.round(this.y) + "μGal";
+        } else {
+          return "Benchmark <b>" + this.series.name + "</b><br> Gravity Value: " + Math.round(this.y) + "μGal";
+        }
+      }
+    },
+    "plotOptions": {
+	  "series": {
+	   "animation": false
+	  }
+    },
+    "credits": {
+      "enabled": false
+    },
+    "series": series
   });
 
 }
