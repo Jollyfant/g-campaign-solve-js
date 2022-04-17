@@ -315,7 +315,7 @@ GSolve.prototype.plotRaw = function(data, as) {
     },
     "tooltip": {
       "formatter": function () {
-        return "Benchmark <b>" + this.series.name + "</b><br> Gravity Value: " + this.y + "μGal";
+        return "Benchmark <b>" + this.series.name + "</b><br> Microgravity value: " + this.y + "μGal";
       }
     },
     "exporting": {
@@ -366,7 +366,7 @@ GSolve.prototype.handleExport = function() {
      return new Array(x.options.benchmark, Math.round(x.options.dg), Math.round(x.options.std)).join(",");
    })
   
-   csv.unshift(["Benchmark", "Gravity Difference (\u03BCGal)", "2\u03C3 Confidence Interval (\u03BCGal)"].join(","));
+   csv.unshift(["Benchmark", "Microgravity Difference (\u03BCGal)", "2\u03C3 Confidence Interval (\u03BCGal)"].join(","));
    csv.unshift(["Input", G.filename].join(","))
    csv.unshift(["Version", GSolve.prototype.VERSION].join(","))
    csv.unshift(["Exported", new Date().toISOString().substring(0, 19)].join(","))
@@ -374,7 +374,7 @@ GSolve.prototype.handleExport = function() {
    let blob = new Blob([csv.join("\n")]);
    let a = window.document.createElement("a");
    a.href = window.URL.createObjectURL(blob, {type: "text/csv;charset=utf-8"});
-   a.download = "gravity-results.csv";
+   a.download = "microgravity-results.csv";
    document.body.appendChild(a);
    a.click();
    document.body.removeChild(a);
@@ -492,6 +492,7 @@ GSolve.prototype.plotSolution = function(data, times, as, lookup, polynomial, ti
     series.push({
       "name": "Tare (" + Math.round(tareOffset[tare]) + "μGal)",
       "type": "scatter",
+      "tare": Math.round(tareOffset[tare]),
       "color": "white",
       "marker": {
         "symbol": "circle",
@@ -561,10 +562,15 @@ GSolve.prototype.plotSolution = function(data, times, as, lookup, polynomial, ti
     },
     "tooltip": {
       formatter: function () {
+
+        if(this.series.name.startsWith("Tare")) {
+          return "<b>Data Tare</b><br> Microgravity Offset: " + Math.round(this.series.options.tare) + "μGal";
+        }
+
         if(shouldSubtractDrift) {
-          return "Benchmark <b>" + this.series.name + "</b><br> Gravity Residual: " + Math.round(this.y) + "μGal";
+          return "Benchmark <b>" + this.series.name + "</b><br> Microgravity Residual: " + Math.round(this.y) + "μGal";
         } else {
-          return "Benchmark <b>" + this.series.name + "</b><br> Gravity Value: " + Math.round(this.y) + "μGal";
+          return "Benchmark <b>" + this.series.name + "</b><br> Microgravity Value: " + Math.round(this.y) + "μGal";
         }
       }
     },
