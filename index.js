@@ -20,7 +20,7 @@ const GSolve = function() {
 }
 
 GSolve.prototype.VERSION = "0.0.1";
-GSolve.prototype.DOI = "DOI Not Available";
+GSolve.prototype.DOI = "10.5281/zenodo.6466389";
 
 GSolve.prototype.demo = function() {
 
