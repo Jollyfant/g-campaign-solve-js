@@ -42,7 +42,7 @@ GSolve.prototype.init = function(event) {
    * Initializes the app with a version / DOI
    */
 
-  document.getElementById("footer-info").innerHTML = "Version " + this.VERSION + " (" + this.DOI + ")";
+  document.getElementById("footer-info").innerHTML = "Version " + this.VERSION + " (<a href=\"https://doi.org/" + this.DOI + "\">" + this.DOI + "</a>)";
 
 }
 
