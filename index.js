@@ -473,6 +473,7 @@ GSolve.prototype.plotSolution = function(data, times, as, lookup, polynomial, ti
         "type": "line",
         "zIndex": 1,
         "lineWidth": 2,
+        "enableMouseTracking": false,
         "color": "grey",
         "data": errors
       }));
