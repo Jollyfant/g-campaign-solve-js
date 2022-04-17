@@ -13,6 +13,7 @@ const GSolve = function() {
   document.getElementById("tare").addEventListener("change", this.calculate.bind(this));
   document.getElementById("tare-enabled").addEventListener("change", this.calculate.bind(this));
   document.getElementById("uncertainty-bars").addEventListener("change", this.calculate.bind(this));
+  document.getElementById("use-ols").addEventListener("change", this.calculate.bind(this));
   document.getElementById("demo").addEventListener("click", this.demo.bind(this));
 
   document.addEventListener('DOMContentLoaded', this.init.bind(this));
@@ -158,8 +159,14 @@ GSolve.prototype.calculate = function() {
   // Transpose
   gMatrix = math.transpose(dMatrix);
 
-  // Weiht matrix
-  let wMatrix = math.diag(data.map(x => (1 / x.error ** 2)));
+  // Weight matrix
+  let wMatrix;
+
+  if(document.getElementById("use-ols").checked) {
+    wMatrix = math.diag(new Array(data.length).fill(1));
+  } else {
+    wMatrix = math.diag(data.map(x => (1 / x.error ** 2)));
+  }
 
   // Values from mGal to uGal
   let values = data.map(x => 1000 * x.value);
