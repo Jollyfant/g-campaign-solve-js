@@ -1,3 +1,5 @@
+# This is a comment: use it to remove lines
+# Time (UTC), Benchmark, Gravity Value, Standard Deviation
 2012-11-27T18:42:17,HVO41,3637.77,0.475
 2012-11-27T18:43:23,HVO41,3637.767,0.415
 2012-11-27T18:44:28,HVO41,3637.758,0.473
