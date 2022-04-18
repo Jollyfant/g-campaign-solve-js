@@ -30,8 +30,8 @@ GSolve.prototype.demo = function() {
    * Loads a demo file to display
    */
 
-  fetch("./example-one.txt").then(response => response.text()).then(function(result) {
-    this.parseFile({ result });
+  fetch("./example-default.txt").then(response => response.text()).then(function(result) {
+    this.parseFile("default", { result });
   }.bind(this));
 
 }
@@ -59,19 +59,76 @@ GSolve.prototype.readFile = function(event) {
 
   this.filename = file.name;
 
-  reader.onload = this.parseFile.bind(this, reader);
+  reader.onload = function() {
+    this.parseFile(document.getElementById("file-type").value, reader)
+  }.bind(this);
+
   reader.readAsText(file);
 
 }
 
-GSolve.prototype.parseFile = function(reader) {
+GSolve.prototype.parseCG6 = function(result) {
+
+  /*
+   * Function GSolve.parseCG6
+   * Parses CG6 data file from disk
+   */
+
+  return result.split(/\r?\n/).filter(Boolean).filter(x => !x.startsWith("/")).slice(1).map(function(x) {
+
+    let parameters = x.split(/\s+/).filter(Boolean);
+
+    return new Object({
+      "time": Date.parse(parameters[1] + "T" + parameters[2] + "Z"),
+      "benchmark": parameters[0],
+      "value": Number(parameters[3]),
+      "error": Number(parameters[5])
+    });
+
+  });
+
+}
+
+GSolve.prototype.parseCG5 = function(result) {
+
+  /*
+   * Function GSolve.parseCG5
+   * Parses CG5 data file from disk
+   */
+
+  return result.split(/\r?\n/).filter(Boolean).filter(x => !x.startsWith("/")).map(function(x) {
+
+    let parameters = x.split(/\s+/).filter(Boolean);
+
+    return new Object({
+      "time": Date.parse(parameters[14] + " " + parameters[11] + " UTC"),
+      "benchmark": parameters[1],
+      "value": Number(parameters[3]),
+      "error": Number(parameters[4])
+    });
+
+  });
+
+}
+
+GSolve.prototype.parseFile = function(type, reader) {
 
   /*
    * Function GSolve.parseFile
    * Parses the data file
    */
 
-  this.data = reader.result.split(/\r?\n/).filter(x => !x.startsWith("#")).map(this.parseRow, this);
+  switch(type) {
+    case "default":
+      this.data = reader.result.split(/\r?\n/).filter(x => !x.startsWith("#")).map(this.parseRow, this);
+      break;
+    case "CG5":
+      this.data = this.parseCG5(reader.result);
+      break;
+    case "CG6":
+      this.data = this.parseCG6(reader.result);
+      break;
+  }
 
   this.calculate();
 

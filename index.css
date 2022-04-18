@@ -9,6 +9,10 @@
   font-size: 14px;
 }
 
+#file-type {
+  text-align: center;
+}
+
 input[type="file"] {
     display: none;
 }
