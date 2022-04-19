@@ -120,7 +120,7 @@ GSolve.prototype.parseFile = function(type, reader) {
 
   switch(type) {
     case "default":
-      this.data = reader.result.split(/\r?\n/).filter(x => !x.startsWith("#")).map(this.parseRow, this);
+      this.data = reader.result.split(/\r?\n/).filter(Boolean).filter(x => !x.startsWith("#")).map(this.parseRow, this);
       break;
     case "CG5":
       this.data = this.parseCG5(reader.result);
