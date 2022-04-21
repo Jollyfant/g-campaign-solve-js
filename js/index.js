@@ -30,7 +30,7 @@ GSolve.prototype.demo = function() {
    * Loads a demo file to display
    */
 
-  fetch("./example-default.txt").then(response => response.text()).then(function(result) {
+  fetch("./examples/example-default.txt").then(response => response.text()).then(function(result) {
     this.parseFile("default", { result });
   }.bind(this));
 
