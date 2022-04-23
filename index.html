@@ -4,8 +4,11 @@
 
 
     <meta name="author" content="Mathijs Koymans">
+    <meta name="keywords" content="Microgravity, Campaign, Analysis, CG-5, CG-6, Weighted Least Squares, Drift, Tare">
+    <meta name="description" content="Web application for the analysis of microgravity campaign data">
 
-    <link rel="stylesheet" href="./index.css">
+    <link rel="stylesheet" href="./css/index.css">
+    <link rel="icon" type="image/x-icon" href="./png/favicon.png">
 
     <title>Gravity Solver</title>
 
@@ -14,7 +17,7 @@
   <body>
 
     <div style="text-align: center;">
-      <a href="https://knmi.nl"><img src="./knmi.png"></a>
+      <a href="https://knmi.nl"><img src="./png/knmi.png"></a>
     </div>
 
     <br>
@@ -34,7 +37,7 @@
             <option value="CG6">CG-6</option>
           </select>      
           <p>
-          Example files: <a href="./example-CG5.txt">CG5</a>, <a href="./example-CG6.txt">CG6</a>, <a href="./example-default.txt">default</a>, <span id="demo"><a href="#">load demo</a></span>.
+          Example files: <a href="./examples/example-CG5.txt">CG5</a>, <a href="./examples/example-CG6.txt">CG6</a>, <a href="./examples/example-default.txt">default</a>, <span id="demo"><a href="#">load demo</a></span>.
         </div>
 
         <div class="options-child">
@@ -100,13 +103,15 @@
 
   </body>
 
+  <!-- Highcharts -->
   <script src="https://code.highcharts.com/highcharts.js"></script>
   <script src="https://code.highcharts.com/highcharts-more.js"></script>
   <script src="https://code.highcharts.com/modules/exporting.js"></script>
-  <!-- optional -->
   <script src="https://code.highcharts.com/modules/offline-exporting.js"></script>
 
+  <!-- Math tools -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.4.3/math.js"></script>
-  <script src="index.js"></script>
+
+  <script src="js/index.js"></script>
 
 </html>
