@@ -4,11 +4,8 @@
 
 
     <meta name="author" content="Mathijs Koymans">
-    <meta name="keywords" content="Microgravity, Campaign, Analysis, CG-5, CG-6, Weighted Least Squares, Drift, Tare">
-    <meta name="description" content="Web application for the analysis of microgravity campaign data">
 
     <link rel="stylesheet" href="./css/index.css">
-    <link rel="icon" type="image/x-icon" href="./png/favicon.png">
 
     <title>Gravity Solver</title>
 
@@ -37,7 +34,7 @@
             <option value="CG6">CG-6</option>
           </select>      
           <p>
-          Example files: <a href="./examples/example-CG5.txt">CG5</a>, <a href="./examples/example-CG6.txt">CG6</a>, <a href="./examples/example-default.txt">default</a>, <span id="demo"><a href="#">load demo</a></span>.
+          Example files: <a href="./example-CG5.txt">CG5</a>, <a href="./example-CG6.txt">CG6</a>, <a href="./example-default.txt">default</a>, <span id="demo"><a href="#">load demo</a></span>.
         </div>
 
         <div class="options-child">
@@ -50,15 +47,15 @@
         </div>
 
         <div class="options-child">
-          <input type="checkbox" id="remove-drift"><label for="remove-drift">Subtract Drift</label>
+          <input type="checkbox" id="remove-drift"><label for="remove-drift" title="Subtract drift from the inversion results to center around zero.">Subtract Drift</label>
         </div>
 
         <div class="options-child">
-          <input type="checkbox" id="uncertainty-bars"><label for="uncertainty-bars">Confidence Intervals</label>
+          <input type="checkbox" id="uncertainty-bars"><label for="uncertainty-bars" title="Show uncerainty bars on microgravity inversion results.">Confidence Intervals</label>
         </div>
 
         <div class="options-child">
-          <input type="checkbox" id="correct-tide"><label for="correct-tide" title="Correct for the solid Earth tide if available.">Correct Tide</label>
+          <input type="checkbox" id="correct-tide"><label for="correct-tide" title="Apply the solid Earth correction if available.">Correct Tide</label>
         </div>
 
         <div class="options-child">
@@ -66,7 +63,7 @@
         </div>
 
         <div class="options-child">
-          <input type="checkbox" id="tare-enabled"><label for="tare-enabled">Tare Offset</label> <input type="text" id="tare" size="4">
+          <input type="checkbox" id="tare-enabled"><label for="tare-enabled" title="Enable a tare (degree of freedom) after a particular measurement index.">Tare Offset</label> <input type="text" id="tare" size="4">
         </div>
 
       </div>
@@ -103,15 +100,12 @@
 
   </body>
 
-  <!-- Highcharts -->
   <script src="https://code.highcharts.com/highcharts.js"></script>
   <script src="https://code.highcharts.com/highcharts-more.js"></script>
   <script src="https://code.highcharts.com/modules/exporting.js"></script>
+  <!-- optional -->
   <script src="https://code.highcharts.com/modules/offline-exporting.js"></script>
-
-  <!-- Math tools -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.4.3/math.js"></script>
-
   <script src="js/index.js"></script>
 
 </html>

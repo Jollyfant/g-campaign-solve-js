@@ -100,6 +100,7 @@ GSolve.prototype.parseCG5 = function(result) {
    * Parses CG5 data file from disk
    */
 
+  // Tide correction applied for all measurements?
   let applied = result.split(/\r?\n/)[24].endsWith("YES");
 
   return result.split(/\r?\n/).filter(Boolean).filter(x => !x.startsWith("/")).map(function(x) {
@@ -367,9 +368,17 @@ GSolve.prototype.plotRaw = function(data, as) {
 
     let points = data.filter(x => x.benchmark === benchmark).map(function(x) {
 
+      let value = x.value;
+
+      if(document.getElementById("correct-tide").checked && !x.applied) {
+        value += x.tide;
+      } else if(!document.getElementById("correct-tide").checked && x.applied) {
+        value -= x.tide;
+      }
+
       return new Object({
         "x": x.time,
-        "y": 1000 * x.value
+        "y": 1000 * value
       });
 
     });
@@ -405,7 +414,7 @@ GSolve.prototype.plotRaw = function(data, as) {
     },
     "tooltip": {
       "formatter": function () {
-        return "Benchmark <b>" + this.series.name + "</b><br> Microgravity value: " + this.y + "μGal";
+        return "Benchmark <b>" + this.series.name + "</b><br> Microgravity value: " + Math.round(this.y) + "μGal";
       }
     },
     "exporting": {
@@ -458,6 +467,7 @@ GSolve.prototype.handleExport = function() {
   
    csv.unshift(["Benchmark", "Microgravity Difference (\u03BCGal)", "2\u03C3 Confidence Interval (\u03BCGal)"].join(","));
    csv.unshift(["Input", G.filename].join(","))
+   csv.unshift(["DOI", GSolve.prototype.DOI].join(","))
    csv.unshift(["Version", GSolve.prototype.VERSION].join(","))
    csv.unshift(["Exported", new Date().toISOString().substring(0, 19)].join(","))
 
