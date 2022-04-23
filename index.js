@@ -6,6 +6,7 @@ const GSolve = function() {
    */
 
   this.data = null;
+  this.tideCorrApplied = false;
 
   document.getElementById("load-file").addEventListener("change", this.readFile.bind(this));
   document.getElementById("inversion-order").addEventListener("change", this.calculate.bind(this));
@@ -14,6 +15,7 @@ const GSolve = function() {
   document.getElementById("tare-enabled").addEventListener("change", this.calculate.bind(this));
   document.getElementById("uncertainty-bars").addEventListener("change", this.calculate.bind(this));
   document.getElementById("use-ols").addEventListener("change", this.calculate.bind(this));
+  document.getElementById("correct-tide").addEventListener("change", this.calculate.bind(this));
   document.getElementById("demo").addEventListener("click", this.demo.bind(this));
 
   document.addEventListener('DOMContentLoaded', this.init.bind(this));
@@ -82,7 +84,9 @@ GSolve.prototype.parseCG6 = function(result) {
       "time": Date.parse(parameters[1] + "T" + parameters[2] + "Z"),
       "benchmark": parameters[0],
       "value": Number(parameters[3]),
-      "error": Number(parameters[5])
+      "error": Number(parameters[5]),
+      "applied": parameters[23][3] === "1",
+      "tide": Number(parameters[11])
     });
 
   });
@@ -96,6 +100,8 @@ GSolve.prototype.parseCG5 = function(result) {
    * Parses CG5 data file from disk
    */
 
+  let applied = result.split(/\r?\n/)[24].endsWith("YES");
+
   return result.split(/\r?\n/).filter(Boolean).filter(x => !x.startsWith("/")).map(function(x) {
 
     let parameters = x.split(/\s+/).filter(Boolean);
@@ -104,7 +110,9 @@ GSolve.prototype.parseCG5 = function(result) {
       "time": Date.parse(parameters[14] + " " + parameters[11] + " UTC"),
       "benchmark": parameters[1],
       "value": Number(parameters[3]),
-      "error": Number(parameters[4])
+      "error": Number(parameters[4]),
+      "applied": applied,
+      "tide": Number(parameters[8])
     });
 
   });
@@ -118,15 +126,19 @@ GSolve.prototype.parseFile = function(type, reader) {
    * Parses the data file
    */
 
+  document.getElementById("correct-tide").disabled = true;
+
   switch(type) {
     case "default":
       this.data = reader.result.split(/\r?\n/).filter(x => !x.startsWith("#")).map(this.parseRow, this);
       break;
     case "CG5":
       this.data = this.parseCG5(reader.result);
+      document.getElementById("correct-tide").disabled = false;
       break;
     case "CG6":
       this.data = this.parseCG6(reader.result);
+      document.getElementById("correct-tide").disabled = false;
       break;
   }
 
@@ -147,7 +159,9 @@ GSolve.prototype.parseRow = function(row) {
     "time": Date.parse(time + "Z"),
     "benchmark": benchmark,
     "value": Number(value),
-    "error": Number(error)
+    "error": Number(error),
+    "applied": true,
+    "tide": 0
   })
 
 }
@@ -226,7 +240,19 @@ GSolve.prototype.calculate = function() {
   }
 
   // Values from mGal to uGal
-  let values = data.map(x => 1000 * x.value);
+  let values = data.map(function(x) {
+
+    let value = x.value;
+
+    if(document.getElementById("correct-tide").checked && !x.applied) {
+      value += x.tide;
+    } else if(!document.getElementById("correct-tide").checked && x.applied) {
+      value -= x.tide;
+    }
+
+    return 1000 * value;
+
+  });
 
   // Complete the inversion with the design, weight matrix and values
   let { lsq, std } = this.invert(gMatrix, wMatrix, values);
@@ -476,6 +502,12 @@ GSolve.prototype.plotSolution = function(data, times, as, lookup, polynomial, ti
       }
 
       let value = 1000 * x.value - dg - tareOffset[i];
+
+      if(document.getElementById("correct-tide").checked && !x.applied) {
+        value += 1000 * x.tide;
+      } else if(!document.getElementById("correct-tide").checked && x.applied) {
+        value -= 1000 * x.tide;
+      }
 
       if(shouldSubtractDrift) {
         value -= this.interp(polynomial, (x.time - timecorr) / 1000);
