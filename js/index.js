@@ -69,6 +69,26 @@ GSolve.prototype.readFile = function(event) {
 
 }
 
+GSolve.prototype.parseJeanne = function(result) {
+
+  return result.split(/\r?\n/).filter(Boolean).filter(x => !x.startsWith("%")).map(function(x) {
+
+    let parameters = x.split(",").filter(Boolean);
+    let date = parameters[15].split("/").reverse().join("/");
+
+    return new Object({
+      "time": Date.parse(date + " " + parameters[12] + " UTC"),
+      "benchmark": parameters[0],
+      "value": Number(parameters[4]),
+      "error": Number(parameters[5]),
+      "applied": false,
+      "tide": Number(parameters[9])
+    });
+
+  });
+
+}
+
 GSolve.prototype.parseCG6 = function(result) {
 
   /*
@@ -101,9 +121,19 @@ GSolve.prototype.parseCG5 = function(result) {
    */
 
   // Tide correction applied for all measurements?
-  let applied = result.split(/\r?\n/)[24].endsWith("YES");
+  let applied;
 
-  return result.split(/\r?\n/).filter(Boolean).filter(x => !x.startsWith("/")).map(function(x) {
+  result.split(/\r?\n/).forEach(function(line) {
+    if(line.includes("Tide Correction")) {
+      if(line.trim().endsWith("YES")) {
+        applied = true;
+      } else if(line.trim().endsWith("NO")) {
+        applied = false;
+      }
+    } 
+  });
+
+  return result.split(/\r?\n/).filter(Boolean).filter(x => !x.trim().startsWith("/")).map(function(x) {
 
     let parameters = x.split(/\s+/).filter(Boolean);
 
@@ -116,7 +146,7 @@ GSolve.prototype.parseCG5 = function(result) {
       "tide": Number(parameters[8])
     });
 
-  });
+  }).filter(Boolean);
 
 }
 
@@ -139,6 +169,10 @@ GSolve.prototype.parseFile = function(type, reader) {
       break;
     case "CG6":
       this.data = this.parseCG6(reader.result);
+      document.getElementById("correct-tide").disabled = false;
+      break;
+    case "Jeanne":
+      this.data = this.parseJeanne(reader.result);
       document.getElementById("correct-tide").disabled = false;
       break;
   }
@@ -399,6 +433,7 @@ GSolve.prototype.plotRaw = function(data, as) {
   Highcharts.chart("container-raw", {
     "chart": {
       "animation": false,
+      "zoomType": "xy",
       "type": "scatter",
     },
     "title": {
@@ -426,6 +461,7 @@ GSolve.prototype.plotRaw = function(data, as) {
     },
 	"plotOptions": {
 	  "series": {
+	   "turboThreshold": 0,
 	    "animation": false
 	  }
 	},
@@ -461,10 +497,10 @@ GSolve.prototype.handleExport = function() {
    * Handles the .CSV exporting of a gravity data file
    */
 
-   let csv = this.series.slice(0, this.series.length - 1).map(function(x) {
+   let csv = this.series.slice(0, this.series.length - 1).filter(x => x.type === "scatter").map(function(x) {
      return new Array(x.options.benchmark, Math.round(x.options.dg), Math.round(x.options.std)).join(",");
    })
-  
+
    csv.unshift(["Benchmark", "Microgravity Difference (\u03BCGal)", "2\u03C3 Confidence Interval (\u03BCGal)"].join(","));
    csv.unshift(["Input", G.filename].join(","))
    csv.unshift(["DOI", GSolve.prototype.DOI].join(","))
@@ -677,12 +713,13 @@ GSolve.prototype.plotSolution = function(data, times, as, lookup, polynomial, ti
         if(shouldSubtractDrift) {
           return "Benchmark <b>" + this.series.name + "</b><br> Microgravity Residual: " + Math.round(this.y) + "μGal";
         } else {
-          return "Benchmark <b>" + this.series.name + "</b><br> Microgravity Value: " + Math.round(this.y) + "μGal";
+          return "Benchmark <b>" + this.series.name + "</b><br> Microgravity Value: " + Math.round(this.y) + "μGal" + "<br>Date: " + new Date(this.x).toISOString();
         }
       }
     },
     "plotOptions": {
 	  "series": {
+	   "turboThreshold": 0,
 	   "animation": false
 	  }
     },
