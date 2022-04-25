@@ -39,8 +39,11 @@
         </div>
 
         <div class="options-child">
+          Anchor: 
+          <select id="select-anchor" title="Select an anchor for the values to be expressed to."></select>
+          <hr>
           Drift Order: 
-          <select id="inversion-order">
+          <select id="inversion-order" title="Polynomial order of the instrumental drift (linear = 1)">
             <option value="1">1</option>
             <option value="2">2</option>
             <option value="3">3</option>
@@ -48,18 +51,18 @@
         </div>
 
         <div class="options-child">
-          <input type="checkbox" id="remove-drift"><label for="remove-drift" title="Subtract drift from the inversion results to center around zero.">Subtract Drift</label>
+
         </div>
 
         <div class="options-child">
+          <input type="checkbox" id="remove-drift"><label for="remove-drift" title="Subtract drift from the inversion results to center around zero.">Subtract Drift</label>
+          <hr>
           <input type="checkbox" id="uncertainty-bars"><label for="uncertainty-bars" title="Show uncerainty bars on microgravity inversion results.">Confidence Intervals</label>
         </div>
 
         <div class="options-child">
           <input type="checkbox" id="correct-tide"><label for="correct-tide" title="Apply the solid Earth correction if available.">Correct Tide</label>
-        </div>
-
-        <div class="options-child">
+          <hr>
           <input type="checkbox" id="use-ols"><label for="use-ols" title="Use unit weight for the WLS (OLS).">Unit Weight</label>
         </div>
 

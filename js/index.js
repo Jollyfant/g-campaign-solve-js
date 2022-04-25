@@ -16,6 +16,7 @@ const GSolve = function() {
   document.getElementById("uncertainty-bars").addEventListener("change", this.calculate.bind(this));
   document.getElementById("use-ols").addEventListener("change", this.calculate.bind(this));
   document.getElementById("correct-tide").addEventListener("change", this.calculate.bind(this));
+  document.getElementById("select-anchor").addEventListener("change", this.calculate.bind(this));
   document.getElementById("demo").addEventListener("click", this.demo.bind(this));
 
   document.addEventListener('DOMContentLoaded', this.init.bind(this));
@@ -177,6 +178,17 @@ GSolve.prototype.parseFile = function(type, reader) {
       break;
   }
 
+  let benchmarks = this.data.map(x => x.benchmark);
+  let select = document.getElementById("select-anchor");
+
+  for (a in select.options) { select.options.remove(0); }
+  new Set(benchmarks).forEach(function(benchmark) {
+    let option = document.createElement("option");
+    option.text = benchmark;
+    option.value = benchmark;
+    select.add(option);
+  });
+
   this.calculate();
 
 }
@@ -230,11 +242,8 @@ GSolve.prototype.calculate = function() {
   // Settings
   let data = this.data;
   let degree = Number(document.getElementById("inversion-order").value);
-
-  // Anchor is the first entry
-  let anchor = this.data[0].benchmark;
-
-  document.getElementById("anchor").innerHTML = anchor;
+  let anchor = document.getElementById("select-anchor").value;
+  
   let times = data.map(x => x.time);
   let timecorr = times[0];
   times = times.map(x => (x - timecorr) / 1000);
@@ -497,8 +506,15 @@ GSolve.prototype.handleExport = function() {
    * Handles the .CSV exporting of a gravity data file
    */
 
-   let csv = this.series.slice(0, this.series.length - 1).filter(x => x.type === "scatter").map(function(x) {
-     return new Array(x.options.benchmark, Math.round(x.options.dg), Math.round(x.options.std)).join(",");
+   let csv = this.series.filter(x => x.type === "scatter").map(function(x) {
+
+     // Round to the microGal level
+     return new Array(
+       x.options.benchmark,
+       Math.round(x.options.dg),
+       Math.round(x.options.std)
+     ).join(",");
+
    })
 
    csv.unshift(["Benchmark", "Microgravity Difference (\u03BCGal)", "2\u03C3 Confidence Interval (\u03BCGal)"].join(","));
@@ -592,7 +608,7 @@ GSolve.prototype.plotSolution = function(data, times, as, lookup, polynomial, ti
       "dg": dg,
       "benchmark": benchmark,
       "std": uncertainty,
-      "name": benchmark === as[0] ? benchmark : benchmark + " (" + Math.round(dg) + "±" + uncertainty + ")",
+      "name": benchmark === as[0] ? benchmark + " (Anchor)" : benchmark + " (" + Math.round(dg) + "±" + uncertainty + ")",
       "marker": {
         "symbol": "circle",
         "lineWidth": 1,
