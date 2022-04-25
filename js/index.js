@@ -2,12 +2,12 @@ const GSolve = function() {
 
   /*
    * Class GSolve
-   * Wrapper for the application
+   * Wrapper for the web application
    */
 
   this.data = null;
-  this.tideCorrApplied = false;
 
+  // Event listeners
   document.getElementById("load-file").addEventListener("change", this.readFile.bind(this));
   document.getElementById("inversion-order").addEventListener("change", this.calculate.bind(this));
   document.getElementById("remove-drift").addEventListener("change", this.calculate.bind(this));
@@ -19,20 +19,23 @@ const GSolve = function() {
   document.getElementById("select-anchor").addEventListener("change", this.calculate.bind(this));
   document.getElementById("demo").addEventListener("click", this.demo.bind(this));
 
-  document.addEventListener('DOMContentLoaded', this.init.bind(this));
+  // Initialize the application
+  document.addEventListener("DOMContentLoaded", this.init.bind(this));
 
 }
 
 GSolve.prototype.VERSION = "0.0.1";
 GSolve.prototype.DOI = "10.5281/zenodo.6466389";
+GSolve.prototype.CMAP = "YlOrRd";
 
 GSolve.prototype.demo = function() {
 
   /*
    * Function GSolve.demo
-   * Loads a demo file to display
+   * Loads a demo file to display for the user
    */
 
+  // Load an example data file
   fetch("./examples/example-default.txt").then(response => response.text()).then(function(result) {
     this.parseFile("default", { result });
   }.bind(this));
@@ -63,7 +66,7 @@ GSolve.prototype.readFile = function(event) {
   this.filename = file.name;
 
   reader.onload = function() {
-    this.parseFile(document.getElementById("file-type").value, reader)
+    this.parseFile(document.getElementById("file-type").value, reader);
   }.bind(this);
 
   reader.readAsText(file);
@@ -72,11 +75,19 @@ GSolve.prototype.readFile = function(event) {
 
 GSolve.prototype.parseJeanne = function(result) {
 
+  /*
+   * Function GSolve.parseJeanne
+   * Parses microgravity files similar to CG5 but in the "Jeanne" format.
+   */
+
   return result.split(/\r?\n/).filter(Boolean).filter(x => !x.startsWith("%")).map(function(x) {
 
     let parameters = x.split(",").filter(Boolean);
+
+    // Date YYYY/MM/DD is reversed
     let date = parameters[15].split("/").reverse().join("/");
 
+    // Assume the tidal corrections have NOT been applied!
     return new Object({
       "time": Date.parse(date + " " + parameters[12] + " UTC"),
       "benchmark": parameters[0],
@@ -124,6 +135,7 @@ GSolve.prototype.parseCG5 = function(result) {
   // Tide correction applied for all measurements?
   let applied;
 
+  // Bit tough here but the CG5 format is not "standard" and this is not always on the same line
   result.split(/\r?\n/).forEach(function(line) {
     if(line.includes("Tide Correction")) {
       if(line.trim().endsWith("YES")) {
@@ -147,7 +159,7 @@ GSolve.prototype.parseCG5 = function(result) {
       "tide": Number(parameters[8])
     });
 
-  }).filter(Boolean);
+  });
 
 }
 
@@ -163,6 +175,7 @@ GSolve.prototype.parseFile = function(type, reader) {
   switch(type) {
     case "default":
       this.data = reader.result.split(/\r?\n/).filter(Boolean).filter(x => !x.startsWith("#")).map(this.parseRow, this);
+      document.getElementById("correct-tide").checked = false;
       break;
     case "CG5":
       this.data = this.parseCG5(reader.result);
@@ -178,10 +191,13 @@ GSolve.prototype.parseFile = function(type, reader) {
       break;
   }
 
+  // Add all options for available anchors
   let benchmarks = this.data.map(x => x.benchmark);
   let select = document.getElementById("select-anchor");
 
-  for (a in select.options) { select.options.remove(0); }
+  // Delete existing
+  Array.from(select.options).forEach(x => select.options.remove(0));	
+
   new Set(benchmarks).forEach(function(benchmark) {
     let option = document.createElement("option");
     option.text = benchmark;
@@ -407,7 +423,9 @@ GSolve.prototype.plotRaw = function(data, as) {
    * Plots the raw occupations
    */
 
-  let series = Array.from(as).map(function(benchmark) {
+  let colors = chroma.scale(this.CMAP);
+
+  let series = Array.from(as).map(function(benchmark, c) {
 
     let points = data.filter(x => x.benchmark === benchmark).map(function(x) {
 
@@ -428,6 +446,7 @@ GSolve.prototype.plotRaw = function(data, as) {
 
     return new Object({
       "name": benchmark,
+      "color": colors(c / (as.length - 1)).toString(),
       "marker": {
         "symbol": "circle",
         "lineWidth": 1,
@@ -454,6 +473,7 @@ GSolve.prototype.plotRaw = function(data, as) {
       }
     },
     "xAxis": {
+      "gridLineWidth": 1,
       "type": "datetime"
     },
     "tooltip": {
@@ -548,8 +568,9 @@ GSolve.prototype.plotSolution = function(data, times, as, lookup, polynomial, ti
   let correct = true;
   let series = new Array();
   let tares = new Array();
+  let colors = chroma.scale(this.CMAP);
 
-  Array.from(as).forEach(function(benchmark) {
+  Array.from(as).forEach(function(benchmark, c) {
 
     let dg = lookup[benchmark].dg;
     let uncertainty = Math.round(2 * lookup[benchmark].stds);
@@ -605,6 +626,7 @@ GSolve.prototype.plotSolution = function(data, times, as, lookup, polynomial, ti
 
     series.push(new Object({
       "type": "scatter",
+      "color": colors(c / (as.length - 1)).toString(),
       "dg": dg,
       "benchmark": benchmark,
       "std": uncertainty,
@@ -703,6 +725,7 @@ GSolve.prototype.plotSolution = function(data, times, as, lookup, polynomial, ti
       }
     },
     "xAxis": {
+      "gridLineWidth": 1,
       "type": "datetime",
       "plotBands": plotBands,
     },
