@@ -215,7 +215,7 @@ GSolve.prototype.parseFile = function(type, reader) {
 
 }
 
-GSolve.prototype.parseRow = function(row) {
+GSolve.prototype.parseRow = function(row, i) {
 
   /*
    * Function GSolve.parseRow
@@ -230,6 +230,8 @@ GSolve.prototype.parseRow = function(row) {
     "value": Number(value),
     "error": Number(error),
     "applied": true,
+    "use": true,
+    "index": 1,
     "tide": 0
   })
 
