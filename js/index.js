@@ -231,7 +231,7 @@ GSolve.prototype.parseRow = function(row, i) {
     "error": Number(error),
     "applied": true,
     "use": true,
-    "index": 1,
+    "index": i,
     "tide": 0
   })
 
