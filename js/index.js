@@ -80,7 +80,7 @@ GSolve.prototype.parseJeanne = function(result) {
    * Parses microgravity files similar to CG5 but in the "Jeanne" format.
    */
 
-  return result.split(/\r?\n/).filter(Boolean).filter(x => !x.startsWith("%")).map(function(x) {
+  return result.split(/\r?\n/).filter(Boolean).filter(x => !x.startsWith("%")).map(function(x, i) {
 
     let parameters = x.split(",").filter(Boolean);
 
@@ -94,6 +94,8 @@ GSolve.prototype.parseJeanne = function(result) {
       "value": Number(parameters[4]),
       "error": Number(parameters[5]),
       "applied": false,
+      "use": true,
+      "index": i,
       "tide": Number(parameters[9])
     });
 
@@ -108,7 +110,7 @@ GSolve.prototype.parseCG6 = function(result) {
    * Parses CG6 data file from disk
    */
 
-  return result.split(/\r?\n/).filter(Boolean).filter(x => !x.startsWith("/")).slice(1).map(function(x) {
+  return result.split(/\r?\n/).filter(Boolean).filter(x => !x.startsWith("/")).slice(1).map(function(x, i) {
 
     let parameters = x.split(/\s+/).filter(Boolean);
 
@@ -118,6 +120,8 @@ GSolve.prototype.parseCG6 = function(result) {
       "value": Number(parameters[3]),
       "error": Number(parameters[5]),
       "applied": parameters[23][3] === "1",
+      "use": true,
+      "index": i,
       "tide": Number(parameters[11])
     });
 
@@ -146,7 +150,7 @@ GSolve.prototype.parseCG5 = function(result) {
     } 
   });
 
-  return result.split(/\r?\n/).filter(Boolean).filter(x => !x.trim().startsWith("/")).map(function(x) {
+  return result.split(/\r?\n/).filter(Boolean).filter(x => !x.trim().startsWith("/")).map(function(x, i) {
 
     let parameters = x.split(/\s+/).filter(Boolean);
 
@@ -156,6 +160,8 @@ GSolve.prototype.parseCG5 = function(result) {
       "value": Number(parameters[3]),
       "error": Number(parameters[4]),
       "applied": applied,
+      "use": true,
+      "index": i,
       "tide": Number(parameters[8])
     });
 
@@ -251,6 +257,9 @@ GSolve.prototype.calculate = function() {
    * Returns the design matrix for the drift parameters (polynomial)
    */
 
+  // Get the scroll offset before calculation to restore it later!
+  let off = (window.pageYOffset || document.documentElement.scrollTop)  - (document.documentElement.clientTop || 0);
+
   if(this.data === null) {
     return;
   }
@@ -260,6 +269,8 @@ GSolve.prototype.calculate = function() {
   let degree = Number(document.getElementById("inversion-order").value);
   let anchor = document.getElementById("select-anchor").value;
   
+  // Get data to use
+  data = data.filter(x => x.use);
   let times = data.map(x => x.time);
   let timecorr = times[0];
   times = times.map(x => (x - timecorr) / 1000);
@@ -349,12 +360,15 @@ GSolve.prototype.calculate = function() {
     tareOffset = new Array(times.length).fill(0);
   }
 
-  this.plotRaw(data, sep);
-  this.plotSolution(data, times, sep, lookup, polynomial, timecorr, tareOffset, tare);
-
   // Show
   document.getElementById("graphs").style.display = "block";
   document.getElementById("information").style.display = "none";
+
+  this.plotRaw(this.data, sep);
+  this.plotSolution(data, times, sep, lookup, polynomial, timecorr, tareOffset, tare, this.data[0].time, this.data[this.data.length - 1].time);
+
+  // Reset scrolling
+  window.scrollTo(0, off); 
 
 }
 
@@ -439,7 +453,9 @@ GSolve.prototype.plotRaw = function(data, as) {
 
       return new Object({
         "x": x.time,
-        "y": 1000 * value
+        "y": 1000 * value,
+        "index": x.index,
+        "marker": x.use ? null : {"lineColor": "grey", "fillColor": "rgba(0, 0, 0, 0.25)"}
       });
 
     });
@@ -458,7 +474,7 @@ GSolve.prototype.plotRaw = function(data, as) {
 
   });
 
-  Highcharts.chart("container-raw", {
+  let chart = Highcharts.chart("container-raw", {
     "chart": {
       "animation": false,
       "zoomType": "xy",
@@ -488,17 +504,27 @@ GSolve.prototype.plotRaw = function(data, as) {
         }
       }
     },
-	"plotOptions": {
-	  "series": {
-	   "turboThreshold": 0,
-	    "animation": false
-	  }
-	},
+    "plotOptions": {
+      "series": {
+        "turboThreshold": 0,
+	"animation": false,
+        "point": {
+          "events": {
+            "click": function() {
+              data[this.options.index].use = !data[this.options.index].use;
+              G.calculate();
+            }
+          }
+        }
+      }
+    },
     "credits": {
       "enabled": false
     },
     "series": series
   });
+
+  chart.reflow();
 
 }
 
@@ -553,7 +579,7 @@ GSolve.prototype.handleExport = function() {
 
 }
 
-GSolve.prototype.plotSolution = function(data, times, as, lookup, polynomial, timecorr, tareOffset, tare) {
+GSolve.prototype.plotSolution = function(data, times, as, lookup, polynomial, timecorr, tareOffset, tare, xMin, xMax) {
 
   /*
    * Function GSolve.plotSolution
@@ -702,7 +728,7 @@ GSolve.prototype.plotSolution = function(data, times, as, lookup, polynomial, ti
     "type": "line",
     "name": "Drift (" + Math.round(86400 * driftPerSecond) + "μGal/d) - Order " + (polynomial.length - 1),
     "color": "red",
-    "dashStyle": "LongDash",
+    "dashStyle": "ShortDash",
     "marker": {
       "enabled": false
     },
@@ -711,7 +737,7 @@ GSolve.prototype.plotSolution = function(data, times, as, lookup, polynomial, ti
     "data": polyLineData
   });
 
-  Highcharts.chart("container-solved", {
+  let chart = Highcharts.chart("container-solved", {
     chart: {
         "animation": false,
         "type": "scatter",
@@ -728,6 +754,8 @@ GSolve.prototype.plotSolution = function(data, times, as, lookup, polynomial, ti
       "gridLineWidth": 1,
       "type": "datetime",
       "plotBands": plotBands,
+      "min": xMin,
+      "max": xMax
     },
     "exporting": {
         "menuItemDefinitions": {
@@ -767,6 +795,8 @@ GSolve.prototype.plotSolution = function(data, times, as, lookup, polynomial, ti
     },
     "series": series
   });
+
+  chart.reflow();
 
 }
 
