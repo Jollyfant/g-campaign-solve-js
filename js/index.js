@@ -87,13 +87,13 @@ GSolve.prototype.parseJeanne = function(result) {
     // Date YYYY/MM/DD is reversed
     let date = parameters[15].split("/").reverse().join("/");
 
-    // Assume the tidal corrections have NOT been applied!
+    // Tidal corrections have been applied
     return new Object({
       "time": Date.parse(date + " " + parameters[12] + " UTC"),
       "benchmark": parameters[0],
       "value": Number(parameters[4]),
       "error": Number(parameters[5]),
-      "applied": false,
+      "applied": true,
       "use": true,
       "index": i,
       "tide": Number(parameters[9])
