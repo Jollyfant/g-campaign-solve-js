@@ -129,6 +129,46 @@ GSolve.prototype.parseCG6 = function(result) {
 
 }
 
+GSolve.prototype.parseCG5GPS = function(result) {
+
+  /*
+   * Function GSolve.parseCG5
+   * Parses CG5 data file from disk
+   */
+
+  // Tide correction applied for all measurements?
+  let applied;
+
+  // Bit tough here but the CG5 format is not "standard" and this is not always on the same line
+  result.split(/\r?\n/).forEach(function(line) {
+    if(line.includes("Tide Correction")) {
+      if(line.trim().endsWith("YES")) {
+        applied = true;
+      } else if(line.trim().endsWith("NO")) {
+        applied = false;
+      }
+    }
+  });
+
+  return result.split(/\r?\n/).filter(Boolean).filter(x => !x.trim().startsWith("/")).map(function(x, i) {
+
+    let parameters = x.split(/\s+/).filter(Boolean);
+
+    return new Object({
+      "time": Date.parse(parameters[15] + " " + parameters[12] + " UTC"),
+      "benchmark": parameters[0],
+      "value": Number(parameters[4]),
+      "error": Number(parameters[5]),
+      "applied": applied,
+      "use": true,
+      "index": i,
+      "tide": Number(parameters[9])
+    });
+
+  }).filter(x => !isNaN(x.value));
+
+}
+
 GSolve.prototype.parseCG5 = function(result) {
 
   /*
@@ -182,6 +222,10 @@ GSolve.prototype.parseFile = function(type, reader) {
     case "default":
       this.data = reader.result.split(/\r?\n/).filter(Boolean).filter(x => !x.startsWith("#")).map(this.parseRow, this);
       document.getElementById("correct-tide").checked = false;
+      break;
+    case "CG5GPS":
+      this.data = this.parseCG5GPS(reader.result);
+      document.getElementById("correct-tide").disabled = false;
       break;
     case "CG5":
       this.data = this.parseCG5(reader.result);
